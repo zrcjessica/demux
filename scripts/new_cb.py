@@ -15,7 +15,6 @@ def parse_format(fmt, f):
 def read_barcodes(tsv):
     """ retrieve the tsv file containing the barcodes """
     with open(tsv) as infile:
-        print(infile)
         barcodes = {
             rows[0]: rows[1]
             for rows in csv.reader(infile, delimiter="\t")
@@ -31,7 +30,21 @@ def main(barcodes, reads, in_format=None):
         in_format = ''
     reads = pysam.AlignmentFile(reads, "r"+in_format)
     yield reads
+    tag_idxs = {}
     for read in reads:
+        # initialize some variables
+        tags = read.tags
+        # read the indices of the tags into a dictionary for fast lookup
+        if not len(tag_idxs):
+            for i in range(len(tags)):
+                if tags[i][0] == 'CB':
+                    tag_idxs['CB'] = i
+        # check to see whether the CB tag needs to be changed
+        if tags[tag_idxs['CB']][1] in barcodes:
+            # get the new CB tag
+            tags[tag_idxs['CB']] = (tags[tag_idxs['CB']][0], barcodes[tags[tag_idxs['CB']][1]])
+        # apply the new tags
+        read.tags = tags
         yield read
 
 def write_reads(out, reads, out_format=None):
