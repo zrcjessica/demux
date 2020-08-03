@@ -1,0 +1,31 @@
+# This is the Snakemake configuration file that specifies paths and 
+# and options for the snakemake pipeline.
+# Anybody wishing to use the provided snakemake pipeline should first
+# fill out this file with paths to their own data, as the Snakefile requires it.
+# Every config option has reasonable defaults unless it is labeled as "required."
+# All paths are relative to the directory that Snakemake is executed in.
+# Note: this file is written in the YAML syntax (https://learnxinyminutes.com/docs/yaml/)
+
+data:
+  Rat_Amygdala_787A:
+    reads: data/Rat_Amygdala_787A_all_seq/outs/possorted_genome_bam.bam
+    barcodes: data/Rat_Amygdala_787A_all_seq/outs/filtered_feature_bc_matrix/barcodes.tsv.gz
+  Rat_Opioid_HS_1:
+    reads: data/snRNA/Rat_Opioid_HS_1_premrna/outs/possorted_genome_bam.bam
+    barcodes: data/snRNA/Rat_Opioid_HS_1_premrna/outs/filtered_feature_bc_matrix/barcodes.tsv.gz
+  Rat_Opioid_HS_2:
+    reads: data/snRNA/Rat_Opioid_HS_2_premrna/outs/possorted_genome_bam.bam
+    barcodes: data/snRNA/Rat_Opioid_HS_2_premrna/outs/filtered_feature_bc_matrix/barcodes.tsv.gz
+  Rat_Opioid_HS_3:
+    reads: data/snRNA/Rat_Opioid_HS_3_premrna/outs/possorted_genome_bam.bam
+    barcodes: data/snRNA/Rat_Opioid_HS_3_premrna/outs/filtered_feature_bc_matrix/barcodes.tsv.gz
+  Rat_Opioid_HS_4:
+    reads: data/snRNA/Rat_Opioid_HS_4_premrna/outs/possorted_genome_bam.bam
+    barcodes: data/snRNA/Rat_Opioid_HS_4_premrna/outs/filtered_feature_bc_matrix/barcodes.tsv.gz
+
+# Which samples from the data should we use?
+# This should be a subset of the samples in "data" above
+# If this line is commented out or the list is empty, all samples will be used.
+samples: [Rat_Opioid_HS_1]
+
+out: out
