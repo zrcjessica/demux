@@ -7,7 +7,7 @@ configfile: "config.yml"
 container: "docker://continuumio/miniconda3:4.8.2"
 
 
-def check_config(value, default=False, place=config):
+def check_config(value, place=config, default=False):
     """ return true if config value exists and is true """
     return place[value] if (value in place and place[value]) else default
 # parse samples
@@ -43,4 +43,13 @@ rule new_bam:
     output: config['out']+"/new_reads/{samp}.bam"
     conda: "env.yml"
     shell:
-        "scripts/new_bam.py -o {output} {params} {input.reads}"
+        "scripts/new_bam.py -f -o {output} {params} {input.reads}"
+
+rule merge:
+    input:
+        bams = expand(rules.new_bam.output, samp=config['samples'])
+    output:
+        bam = config['out']+"/new_reads/{samp}.bam"
+    conda: "env.yml"
+    shell:
+        "samtools merge {output} {input}"

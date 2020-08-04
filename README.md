@@ -33,7 +33,7 @@ qsub run
 ```
 
 #### Executing the pipeline on your own data
-You must modify [the config.yaml file](config.yml) to specify paths to your data. The config file is currently configured to run the pipeline on our data (symlinked from the gitignored `data/` folder).
+You must modify [the config.yml file](config.yml) to specify paths to your data. The config file is currently configured to run the pipeline on our data (in the git-ignored `data/` folder).
 
 # files and directories
 ### [Snakefile](Snakefile)

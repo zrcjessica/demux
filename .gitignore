@@ -2,3 +2,4 @@ out
 data
 log/
 .snakemake/
+.ipynb_checkpoints/
