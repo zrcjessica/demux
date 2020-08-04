@@ -43,7 +43,7 @@ rule new_bam:
     params:
         barcodes = lambda wildcards, input: str(Path(input.barcode_dir))+"/"+wildcards.samp+".tsv.gz"
     output: config['out']+"/{rate}/new_reads/{samp}.bam"
-    conda: "env.yml"
+    conda: "envs/default.yml"
     shell:
         "scripts/new_bam.py -o {output} {params} {input.reads}"
 
@@ -52,7 +52,7 @@ rule merge:
         bams = expand(rules.new_bam.output, samp=config['samples'], rate='{rate}')
     output:
         bam = config['out']+"/{rate}/merged.bam"
-    conda: "env.yml"
+    conda: "envs/default.yml"
     shell:
         "samtools merge -h {input[0]} -cf {output} {input}"
 
@@ -70,7 +70,7 @@ rule demux:
         sing = config['out']+"/{rate}/demuxlet/out.sing",
         sing2 = config['out']+"/{rate}/demuxlet/out.sing2",
         pair = config['out']+"/{rate}/demuxlet/out.pair"
-    conda: "env.yml"
+    conda: "envs/demuxlet.yml"
     shell:
         "demuxlet --sam {input.bam} --vcf {input.vcf} --out {params.out}"
 
