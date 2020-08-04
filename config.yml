@@ -6,6 +6,8 @@
 # All paths are relative to the directory that Snakemake is executed in.
 # Note: this file is written in the YAML syntax (https://learnxinyminutes.com/docs/yaml/)
 
+# The input data: reads and barcodes for every sample
+# required!
 data:
   Rat_Amygdala_787A:
     reads: data/Rat_Amygdala_787A_all_seq/outs/possorted_genome_bam.bam
@@ -28,4 +30,11 @@ data:
 # If this line is commented out or the list is empty, all samples will be used.
 samples: [Rat_Opioid_HS_1]
 
+# A VCF containing genotypes for every sample
+# required!
+vcf: blah # we should provide this path once we have it
+
+# Path to the directory in which to place output files
+# It will be created if it doesn't already exist
+# If this value is not provided, it will default to "out"
 out: out
