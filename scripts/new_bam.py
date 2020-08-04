@@ -66,12 +66,11 @@ def main(barcodes, reads, in_format=None, no_filter=False, keep_tags=False):
     tag_idxs = {}
     tags = next(reads)
     for i in range(len(tags)):
-        if tags[i][0] in ('CB', 'RG'):
+        if tags[i][0] in ('CB', 'RG', 'PG'):
             tag_idxs[tags[i][0]] = i
 
     # iterate through each read
     for read in reads:
-        # initialize a pointer to the tags
         tags = read.tags
         # check to see whether the CB tag needs to be changed
         if tags[tag_idxs['CB']][1] in barcodes:
@@ -80,8 +79,12 @@ def main(barcodes, reads, in_format=None, no_filter=False, keep_tags=False):
         elif not no_filter:
             continue
         if not keep_tags:
-            # also change the RG tag so it is consistent across every sample
+            # also change the RG and PG tags so they are consistent across every sample
             tags[tag_idxs['RG']] = ('RG', RG_ID)
+            if 'PG' in tag_idxs:
+                tags.pop(tag_idxs['PG'])
+        # apply the tags back to the read
+        read.tags = tags
         yield read
 
 def write_reads(out, reads, out_format=None):
