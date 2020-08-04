@@ -34,6 +34,10 @@ samples: [Rat_Opioid_HS_1]
 # required!
 vcf: blah # we should provide this path once we have it
 
+# The doublet rate for this simulation
+# Defaults to 0.3 if not provided
+rate: 0.3
+
 # Path to the directory in which to place output files
 # It will be created if it doesn't already exist
 # If this value is not provided, it will default to "out"

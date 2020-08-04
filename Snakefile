@@ -19,14 +19,13 @@ if check_config('samples'):
 else:
     config['samples'] = list(config['data'].keys())
 # also set default value for output dir
-if not check_config('out'):
-    config['out'] = 'out'
+config['out'] = check_config('out', default='out')
 
 
 rule all:
     input:
         expand(
-            config['out']+"/merged.bam", samp=config['samples']
+            config['out']+"/{rate}/merged.bam", samp=config['samples'], rate=check_config('rate', default=0.3)
         )
 
 # @zrcjessica: You can add your code here. I hope you don't mind that I've
@@ -35,7 +34,7 @@ rule all:
 # https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#directories-as-outputs
 # Each tsv in the directory has to be named sample_name + '.tsv.gz'
 rule simulate:
-    output: directory(config['out']+"/barcodes")
+    output: directory(config['out']+"/{rate}/barcodes")
 
 rule new_bam:
     input:
@@ -43,16 +42,16 @@ rule new_bam:
         reads = lambda wildcards: config['data'][wildcards.samp]['reads']
     params:
         barcodes = lambda wildcards, input: str(Path(input.barcode_dir))+"/"+wildcards.samp+".tsv.gz"
-    output: config['out']+"/new_reads/{samp}.bam"
+    output: config['out']+"/{rate}/new_reads/{samp}.bam"
     conda: "env.yml"
     shell:
         "scripts/new_bam.py -o {output} {params} {input.reads}"
 
 rule merge:
     input:
-        bams = expand(rules.new_bam.output, samp=config['samples'])
+        bams = expand(rules.new_bam.output, samp=config['samples'], rate='{rate}')
     output:
-        bam = config['out']+"/merged.bam"
+        bam = config['out']+"/{rate}/merged.bam"
     conda: "env.yml"
     shell:
         "samtools merge -h {input[0]} -cf {output} {input}"
@@ -67,10 +66,10 @@ rule demux:
     params:
         out = lambda wildcards, output: output.best[:-len('.best')]
     output:
-        best = config['out']+"/demuxlet/out.best",
-        sing = config['out']+"/demuxlet/out.sing",
-        sing2 = config['out']+"/demuxlet/out.sing2",
-        pair = config['out']+"/demuxlet/out.pair"
+        best = config['out']+"/{rate}/demuxlet/out.best",
+        sing = config['out']+"/{rate}/demuxlet/out.sing",
+        sing2 = config['out']+"/{rate}/demuxlet/out.sing2",
+        pair = config['out']+"/{rate}/demuxlet/out.pair"
     conda: "env.yml"
     shell:
         "demuxlet --sam {input.bam} --vcf {input.vcf} --out {params.out}"
