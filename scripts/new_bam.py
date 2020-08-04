@@ -28,28 +28,47 @@ def read_barcodes(tsv):
 def get_reads(reads):
     """ get the reads but first get the tags from the first line"""
     read_iter = iter(reads)
-    first = read_iter.next()
+    first = next(read_iter)
     yield first.tags
     yield first
     for read in reads:
         yield read
 
-def main(barcodes, reads, in_format=None, filter_also=False):
+def main(barcodes, reads, in_format=None, no_filter=False, keep_tags=False):
     """
         read the reads and alter their barcodes, returning each line as a
         generator function; the first line will be the pysam object
     """
+
     if in_format != "b":
         in_format = ''
     reads = pysam.AlignmentFile(reads, "r"+in_format)
-    yield reads
+
+    # parse and output the header
+    head = reads.header.to_dict()
+    if not keep_tags:
+        # delete sample-specific tags
+        for tag in ['PG', 'CO']:
+            del head[tag]
+        # change the RG tag too, so that it is consistent across every sample
+        RG_ID = 'Rat:0:1:HFYJTDRXX:1'
+        head['RG'] = [{
+            'ID': RG_ID,
+            'SM': 'Rat',
+            'LB': '0.1',
+            'PU': 'Rat:0:1:HFYJTDRXX:1',
+            'PL': 'ILLUMINA'
+        }]
+    yield head
+
     reads = get_reads(reads)
     # get the indices of each tag for fast lookup later
     tag_idxs = {}
     tags = next(reads)
     for i in range(len(tags)):
-        if tags[i][0] == 'CB':
-            tag_idxs['CB'] = i
+        if tags[i][0] in ('CB', 'RG'):
+            tag_idxs[tags[i][0]] = i
+
     # iterate through each read
     for read in reads:
         # initialize a pointer to the tags
@@ -57,9 +76,12 @@ def main(barcodes, reads, in_format=None, filter_also=False):
         # check to see whether the CB tag needs to be changed
         if tags[tag_idxs['CB']][1] in barcodes:
             # get the new CB tag
-            tags[tag_idxs['CB']] = (tags[tag_idxs['CB']][0], barcodes[tags[tag_idxs['CB']][1]])
-        elif filter_also:
+            tags[tag_idxs['CB']] = ('CB', barcodes[tags[tag_idxs['CB']][1]])
+        elif not no_filter:
             continue
+        if not keep_tags:
+            # also change the RG tag so it is consistent across every sample
+            tags[tag_idxs['RG']] = ('RG', RG_ID)
         yield read
 
 def write_reads(out, reads, out_format=None):
@@ -68,7 +90,7 @@ def write_reads(out, reads, out_format=None):
     """
     if out_format != 'b':
         out_format = ''
-    out = pysam.AlignmentFile(out, "w"+out_format, template=next(reads))
+    out = pysam.AlignmentFile(out, "w"+out_format, header=next(reads))
     for read in reads:
         out.write(read)
 
@@ -90,12 +112,15 @@ if __name__ == "__main__":
         "--out-format", choices=['s', 'b'], default=None, help="whether the output reads should be written in the sam or bam file format; defaults to inferring from the file extension or if stdout, defaults to sam"
     )
     parser.add_argument(
-        "-f", "--filter-also", action='store_true', help="whether to discard reads whose barcodes don't appear in the barcodes file"
+        "-t", "--keep-tags", action='store_true', help="keep PG and CO tags in the header and don't change the RG tags"
+    )
+    parser.add_argument(
+        "-f", "--no-filter", action='store_true', help="keep reads even if their barcodes don't appear in the barcodes file"
     )
     args = parser.parse_args()
 
     # parse the optional format args correctly
-    args.in_format, args.out_format = parse_format(args.in_format, args.reads, args.filter_also), parse_format(args.out_format, args.out)
+    args.in_format, args.out_format = parse_format(args.in_format, args.reads), parse_format(args.out_format, args.out)
 
-    new_reads = write_reads(args.out, main(read_barcodes(args.barcodes), args.reads, args.in_format), args.out_format)
+    new_reads = write_reads(args.out, main(read_barcodes(args.barcodes), args.reads, args.in_format, args.no_filter, args.keep_tags), args.out_format)
 

@@ -43,7 +43,7 @@ rule new_bam:
     output: config['out']+"/new_reads/{samp}.bam"
     conda: "env.yml"
     shell:
-        "scripts/new_bam.py -f -o {output} {params} {input.reads}"
+        "scripts/new_bam.py -o {output} {params} {input.reads}"
 
 rule merge:
     input:
