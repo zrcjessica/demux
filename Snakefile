@@ -30,14 +30,25 @@ rule all:
             config['out']+"/{rate}/demuxlet/out.best", rate=check_config('rate', default=0.3)
         )
 
-# @zrcjessica: You can add your code here. I hope you don't mind that I've
-# already named your rule 'simulate' ;)
-# By the way, I've already created the output directive (just so that the DAG
-# could be computed). The output is a directory, right? I had to use this:
-# https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#directories-as-outputs
-# Each tsv in the directory must be named sample_name + '.tsv.gz' for rules.new_bam
+rule unique_barcodes:
+    input: 
+        barcodes = expand(config['data'][samp]['barcodes'], samp = config['samples'])
+        samples = config['samples']
+    output: directory(config['out'] + "/{rate}/unique_filtered_barcodes")
+    conda: "envs/default.yml"
+    shell:
+        "scripts/get_unique_filtered_barcodes.py -b {input.barcodes} -s {input.samples} -o {output}"
+
 rule simulate:
-    output: directory(config['out']+"/{rate}/barcodes")
+    input: 
+        barcodes_dir = rule.unique_barcodes.output
+        rate = config['rate']
+    output:
+        new_barcodes_dir = directory(config['out'] + "/{rate}/renamed_filtered_barcodes")
+        reference_tables_dir = directory(config['out'] + "/{rate}/reference_tables")
+    conda: "envs/default.yml"
+    shell:
+        "scripts/simulate_doublets.py -b {input.barcodes_dir} -d {input.rate} -o {output.new_barcodes_dir} -r {output.reference_tables_dir}"
 
 rule new_bam:
     input:
