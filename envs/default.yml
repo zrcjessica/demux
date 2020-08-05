@@ -4,3 +4,6 @@ dependencies:
   - bioconda::pysam==0.15.3
   - bioconda::samtools>=1.9=h8571acd_10
   - gawk==5.1.0
+  - conda-forge::scipy
+  - conda-forge::pandas
+  - conda-forge::numpy
