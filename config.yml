@@ -6,24 +6,29 @@
 # All paths are relative to the directory that Snakemake is executed in.
 # Note: this file is written in the YAML syntax (https://learnxinyminutes.com/docs/yaml/)
 
-# The input data: reads and barcodes for every sample
+# The input data: reads, barcodes, and VCF ID for every sample
 # required!
 data:
   Rat_Amygdala_787A:
-    reads: data/Rat_Amygdala_787A_all_seq/outs/possorted_genome_bam.bam
-    barcodes: data/Rat_Amygdala_787A_all_seq/outs/filtered_feature_bc_matrix/barcodes.tsv.gz
+    reads: data/snRNA/Rat_Amygdala_787A_all_seq/outs/possorted_genome_bam.bam
+    barcodes: data/snRNA/Rat_Amygdala_787A_all_seq/outs/filtered_feature_bc_matrix/barcodes.tsv.gz
+    vcf_id: 933000320046549
   Rat_Opioid_HS_1:
     reads: data/snRNA/Rat_Opioid_HS_1_premrna/outs/possorted_genome_bam.bam
     barcodes: data/snRNA/Rat_Opioid_HS_1_premrna/outs/filtered_feature_bc_matrix/barcodes.tsv.gz
+    vcf_id: 933000120138414
   Rat_Opioid_HS_2:
     reads: data/snRNA/Rat_Opioid_HS_2_premrna/outs/possorted_genome_bam.bam
     barcodes: data/snRNA/Rat_Opioid_HS_2_premrna/outs/filtered_feature_bc_matrix/barcodes.tsv.gz
+    vcf_id: 933000120138730
   Rat_Opioid_HS_3:
     reads: data/snRNA/Rat_Opioid_HS_3_premrna/outs/possorted_genome_bam.bam
     barcodes: data/snRNA/Rat_Opioid_HS_3_premrna/outs/filtered_feature_bc_matrix/barcodes.tsv.gz
+    vcf_id: 933000320045746
   Rat_Opioid_HS_4:
     reads: data/snRNA/Rat_Opioid_HS_4_premrna/outs/possorted_genome_bam.bam
     barcodes: data/snRNA/Rat_Opioid_HS_4_premrna/outs/filtered_feature_bc_matrix/barcodes.tsv.gz
+    vcf_id: 933000320046622
 
 # Which samples from the data should we use?
 # This should be a subset of the samples in "data" above
@@ -32,7 +37,7 @@ samples: [Rat_Opioid_HS_1]
 
 # A VCF containing genotypes for every sample
 # required!
-vcf: blah # we should provide this path once we have it
+vcf: data/vcf/HS_n10_telese_rename.vcf.gz
 
 # The doublet rate for this simulation
 # Defaults to 0.3 if not provided

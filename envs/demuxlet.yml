@@ -1,0 +1,4 @@
+channels:
+  - conda-forge
+dependencies:
+  - bioconda::demuxlet=1.0=h089eab3_2
