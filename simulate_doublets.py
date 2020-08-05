@@ -115,6 +115,7 @@ def main():
 	               np.array(simulated_doublets_same)), axis = 1)
 
 	with open(opt.ref_dir + '/same_sample_doublets_reference.tsv', 'w') as fh:
+		fh.write('sample\tbarcodeA\tbarcodeB\n')
 	    for l in doublets_same_reference:
 	        fh.write('\t'.join(l) + '\n')
 
@@ -129,6 +130,7 @@ def main():
 	doublets_diff_reference = np.concatenate((doublets_diff_with_sample_names, simulated_doublets_diff), axis = 1)
 
 	with open(opt.ref_dir + '/diff_sample_doublets_reference.tsv', 'w') as fh:
+		fh.write('sampleA\tsampleB\tbarcodeA\tbarcodeB\n')
 	    for l in doublets_diff_reference:
 	        fh.write('\t'.join(l) + '\n')
 
