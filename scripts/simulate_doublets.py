@@ -27,10 +27,10 @@ def main():
 		dest = "ref_dir",
 		help = "full path to directory to save reference tables in")
 
-	opts, args = parser.parse_args()
+	args = parser.parse_args()
 
 	# load barcodes and sample names
-	barcode_files = glob.glob('%s/*' % opts.barcodes_dir)
+	barcode_files = glob.glob('%s/*' % args.barcodes_dir)
 	sample_names = []
 	barcodes = []
 

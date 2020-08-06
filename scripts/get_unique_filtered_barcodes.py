@@ -20,11 +20,11 @@ def main():
 		action = "store", type = "string",
 		dest = "out_dir",
 		help = "full path to directory where output files will be written")
-	opts, args = parser.parse_args()
+	args = parser.parse_args()
 
 	# load barcodes
 	all_barcodes = []
-	for file in opts.filtered_barcodes:
+	for file in args.filtered_barcodes:
 	    with gzip.open(file) as f:
 	        sample_barcodes = f.read().splitlines()
 	        all_barcodes.append(sample_barcodes)
@@ -40,11 +40,11 @@ def main():
 	# remove duplicated barcodes from barcodes.tsv.gz files and write to new files
 
 	all_filtered_barcodes = []
-	for sample, barcodes in zip(opts.samples, all_barcodes):
+	for sample, barcodes in zip(args.samples, all_barcodes):
 	    filtered_barcodes = sorted(set(barcodes) - set(duplicated_barcodes))
 	    all_filtered_barcodes.append(filtered_barcodes)
 	    
-	    with gzip.open('%s/%s.tsv.gz' % (opts.out_dir, sample), 'wb') as fh:
+	    with gzip.open('%s/%s.tsv.gz' % (args.out_dir, sample), 'wb') as fh:
 	        for barcode in filtered_barcodes:
 	            fh.write(barcode)
 	            fh.write('\n'.encode('utf-8'))
