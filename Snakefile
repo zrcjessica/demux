@@ -32,23 +32,23 @@ rule all:
 
 rule unique_barcodes:
     input: 
-        barcodes = expand(config['data'][samp]['barcodes'], samp = config['samples'])
-        samples = config['samples']
-    output: directory(config['out'] + "/{rate}/unique_filtered_barcodes")
+        barcodes = lambda wildcards: config['data'][wildcards.samp]['barcodes'],
+        samples = expand("{samp}", samp = config['samples'])
+    output: directory(config['out'] + "/unique_filtered_barcodes")
     conda: "envs/default.yml"
     shell:
         "scripts/get_unique_filtered_barcodes.py -b {input.barcodes} -s {input.samples} -o {output}"
 
 rule simulate:
     input: 
-        barcodes_dir = rule.unique_barcodes.output
-        rate = config['rate']
+        barcodes_dir = rules.unique_barcodes.output,
+        rate = "{rate}"
     output:
-        new_barcodes_dir = directory(config['out'] + "/{rate}/renamed_filtered_barcodes")
-        reference_tables_dir = directory(config['out'] + "/{rate}/reference_tables")
+        new_barcodes_dir = directory(config['out'] + "/{rate}/renamed_filtered_barcodes"),
+        reference_dir = directory(config['out'] + "/{rate}/reference_tables")
     conda: "envs/default.yml"
     shell:
-        "scripts/simulate_doublets.py -b {input.barcodes_dir} -d {input.rate} -o {output.new_barcodes_dir} -r {output.reference_tables_dir}"
+        "scripts/simulate_doublets.py -b {input.barcodes_dir} -d {input.rate} -o {output.new_barcodes_dir} -r {output.reference_dir}"
 
 rule new_bam:
     input:
