@@ -8,21 +8,21 @@ from scipy import stats
 import argparse
 
 def main():
-	parser = OptionParser()
-	parser.add_option("-b","--barcodes",
-		action = "store", type = "string", 
+	parser = argparse.ArgumentParser(description = 'process inputs')
+	parser.add_argument("-b","--barcodes",
+		action = "store", 
 		dest = "barcodes_dir",
 		help = "full path to directory with all unique filtered feature barcodes for all samples to multiplex")
-	parser.add_option("-d", "--doublets",
+	parser.add_argument("-d", "--doublets",
 		action = "store", type = "float",
 		dest = "d",
 		help = "doublet rate")
-	parser.add_option("-o", "--out",
-		action = "store", type = "string",
+	parser.add_argument("-o", "--out",
+		action = "store",
 		dest = "out_dir",
 		help = "full path to directory to save new barcode files in")
-	parser.add_option("-r", "--ref",
-		action = "store", type = "string",
+	parser.add_argument("-r", "--ref",
+		action = "store",
 		dest = "ref_dir",
 		help = "full path to directory to save reference tables in")
 

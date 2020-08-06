@@ -7,17 +7,17 @@ from collections import Counter
 import argparse
 
 def main():
-	parser = OptionParser()
-	parser.add_option("-b","--barcodes",
-		action = "store", type = "string", nargs = "+",
+	parser = argparse.ArgumentParser(description = 'process inputs')
+	parser.add_argument("-b","--barcodes",
+		action = "store", nargs = "+",
 		dest = "filtered_barcodes",
 		help = "list of filtered barcode files")
-	parser.add_option("-s", "--samples",
-		action = "store", type = "string", nargs = "+",
+	parser.add_argument("-s", "--samples",
+		action = "store", nargs = "+",
 		dest = "samples",
 		help = "list of sample names corresponding to barcode files")
-	parser.add_option("-o","--out",
-		action = "store", type = "string",
+	parser.add_argument("-o","--out",
+		action = "store",
 		dest = "out_dir",
 		help = "full path to directory where output files will be written")
 	args = parser.parse_args()
