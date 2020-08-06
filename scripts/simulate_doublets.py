@@ -5,8 +5,7 @@ import gzip
 import glob
 import random
 from scipy import stats
-from optparse import OptionParser
-
+import argparse
 
 def main():
 	parser = OptionParser()

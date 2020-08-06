@@ -4,7 +4,7 @@ import pandas as pd
 import gzip
 import glob
 from collections import Counter
-from optparse import OptionParser
+import argparse
 
 def main():
 	parser = OptionParser()
