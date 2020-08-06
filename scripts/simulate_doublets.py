@@ -73,7 +73,7 @@ def main():
 	        simulated_doublets_same.append(doublet)
 
     # simulate doublets containing cells from different samples
-    doublets_diff = []
+	doublets_diff = []
 	for i in range(a):
 	    dbl = np.random.choice(5,2,p = weights,replace = False)
 	    doublets_diff.append(dbl)
