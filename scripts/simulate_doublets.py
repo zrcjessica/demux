@@ -68,7 +68,7 @@ def main():
 
 	# simulate doublets containing cells from the same sample 
 	weights = [len(bc)/x for bc in barcodes]
-	doublets_same = np.unique(np.random.choice(5, b, p = weights), return_counts = True)
+	doublets_same = np.unique(np.random.choice(len(sample_names), b, p = weights), return_counts = True)
 	simulated_doublets_same = []
 	for sample, counts in zip(doublets_same[0], doublets_same[1]):
 		for i in range(counts):
@@ -80,7 +80,7 @@ def main():
 	# simulate doublets containing cells from different samples
 	doublets_diff = []
 	for i in range(a):
-		dbl = np.random.choice(5,2,p = weights,replace = False)
+		dbl = np.random.choice(len(sample_names),2,p = weights,replace = False)
 		doublets_diff.append(dbl)
 
 	doublets_diff = np.array(doublets_diff)
@@ -133,7 +133,7 @@ def main():
 			fh.write('\t'.join(l) + '\n')
 
 	# for doublets with cells from different samples
-	map_samples = dict(zip(range(5), sample_names))
+	map_samples = dict(zip(range(len(sample_names)), sample_names))
 	doublets_diff_with_sample_names = []
 	for i in range(doublets_diff.shape[0]):
 		sampleA = map_samples[doublets_diff[i,0]]
