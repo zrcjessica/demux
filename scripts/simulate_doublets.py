@@ -14,7 +14,7 @@ def main():
 		dest = "barcodes_dir",
 		help = "full path to directory with all unique filtered feature barcodes for all samples to multiplex")
 	parser.add_argument("-d", "--doublets",
-		action = "store", type = float,
+		action = "store", type = "float",
 		dest = "d",
 		help = "doublet rate")
 	parser.add_argument("-o", "--out",
@@ -27,7 +27,9 @@ def main():
 		help = "full path to directory to save reference tables in")
 
 	args = parser.parse_args()
-
+	print('args parsed')
+	print(args)
+	
 	# load barcodes and sample names
 	barcode_files = glob.glob('%s/*' % args.barcodes_dir)
 	sample_names = []
@@ -41,6 +43,9 @@ def main():
 	#         sample_barcodes = [bc.decode('utf-8') for bc in sample_barcodes]
 			barcodes.append(sample_barcodes)
 	
+	print(barcode_files)
+	print(sample_names)
+
 	# compute metrics
 	x = len([x for l in barcodes for x in l])
 	N = len(sample_names)
@@ -48,7 +53,7 @@ def main():
 	print('total cells = %d\ntotal samples = %d' % (x, N))
 
 	# compute expected number of doublets for simulation
-	d = args.d
+	d = opt.d
 
 	totDoublets = int(round(d*x/2))
 	a = int(round(totDoublets*(1-1/N)))
@@ -63,7 +68,7 @@ def main():
 
 	# simulate doublets containing cells from the same sample 
 	weights = [len(bc)/x for bc in barcodes]
-	doublets_same = np.unique(np.random.choice(len(sample_names), b, p = weights), return_counts = True)
+	doublets_same = np.unique(np.random.choice(5, b, p = weights), return_counts = True)
 	simulated_doublets_same = []
 	for sample, counts in zip(doublets_same[0], doublets_same[1]):
 		for i in range(counts):
@@ -75,7 +80,7 @@ def main():
 	# simulate doublets containing cells from different samples
 	doublets_diff = []
 	for i in range(a):
-		dbl = np.random.choice(len(sample_names),2,p = weights,replace = False)
+		dbl = np.random.choice(5,2,p = weights,replace = False)
 		doublets_diff.append(dbl)
 
 	doublets_diff = np.array(doublets_diff)
@@ -95,6 +100,7 @@ def main():
 
 	# generate new filtered.tsv.gz files
 	for sample,bcs in zip(sample_names, barcodes):
+		print('generating new barcodes for %s\n' % sample)
 		new_bcs = []
 		mismatches = 0
 		for i in range(len(bcs)):
@@ -103,25 +109,31 @@ def main():
 				mismatches += 1
 			else:
 				new_bcs.append(bcs[i])
+		print('%d mismatches observed\n' % mismatches)
 		new_bcs = sorted(new_bcs)
-		with gzip.open('%s/%s.tsv.gz' % (args.out_dir, sample), 'wb') as fh:
+		with gzip.open('%s/%s.tsv.gz' % (opt.out_dir, sample), 'wb') as fh:
 			for bc in new_bcs:
 				fh.write(bc)
 				fh.write('\n'.encode('utf-8'))
 			fh.close()
+
+	# check that number of mismatches is as expected
+	expected_mismatches = doublets_same[1] + np.unique(doublets_diff[:,1], return_counts = True)[1]
+	for sample, expected in zip(sample_names, expected_mismatches):
+		print('%d mismatches expected for %s\n' % (expected, sample))
 
 	# write reference files for simulated doublets
 	# for doublets with cells from same samples
 	doublets_same_reference = np.concatenate((np.repeat(sample_names, doublets_same[1]).reshape(-1,1),
 				   np.array(simulated_doublets_same)), axis = 1)
 
-	with open(args.ref_dir + '/same_sample_doublets_reference.tsv', 'w') as fh:
+	with open(opt.ref_dir + '/same_sample_doublets_reference.tsv', 'w') as fh:
 		fh.write('sample\tbarcodeA\tbarcodeB\n')
 		for l in doublets_same_reference:
 			fh.write('\t'.join(l) + '\n')
 
 	# for doublets with cells from different samples
-	map_samples = dict(zip(range(len(sample_names)), sample_names))
+	map_samples = dict(zip(range(5), sample_names))
 	doublets_diff_with_sample_names = []
 	for i in range(doublets_diff.shape[0]):
 		sampleA = map_samples[doublets_diff[i,0]]
@@ -130,7 +142,7 @@ def main():
 
 	doublets_diff_reference = np.concatenate((doublets_diff_with_sample_names, simulated_doublets_diff), axis = 1)
 
-	with open(args.ref_dir + '/diff_sample_doublets_reference.tsv', 'w') as fh:
+	with open(opt.ref_dir + '/diff_sample_doublets_reference.tsv', 'w') as fh:
 		fh.write('sampleA\tsampleB\tbarcodeA\tbarcodeB\n')
 		for l in doublets_diff_reference:
 			fh.write('\t'.join(l) + '\n')
