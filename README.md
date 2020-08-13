@@ -22,6 +22,12 @@ ln -s /iblm/netapp/data1/jezhou/Telese_Rat_Amygdala data
 ```
 If you ever need to switch the input to a different dataset, you can just change the symlink path.
 
+## output
+You can also symlink your output, if you think you might want to change it in the future:
+```
+ln -s /iblm/netapp/data1/jezhou/Telese_Rat_Amygdala/demultiplex_simulation/out out
+```
+
 # execution
 Locally:
 ```
