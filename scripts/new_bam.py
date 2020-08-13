@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import gzip
 import pysam
 import argparse
 from pathlib import Path
@@ -18,7 +19,9 @@ def tsv_reader(f):
 
 def read_barcodes(tsv):
     """ retrieve the tsv file containing the barcodes """
-    with open(tsv) as infile:
+    # first, open a reader for the file
+    tsv = gzip.open(tsv) if tsv.suffix == '.gz' else open(tsv)
+    with tsv as infile:
         barcodes = {
             row[0]: (row[1] if len(row)-1 and len(row[1]) else row[0])
             for row in tsv_reader(infile)

@@ -38,7 +38,9 @@ rule unique_barcodes:
     output: directory(config['out'] + "/unique_filtered_barcodes")
     conda: "envs/default.yml"
     shell:
-        "scripts/get_unique_filtered_barcodes.py -b {input.barcodes} -s {params.samples} -o {output}"
+        "mkdir -p {output} && "
+        "scripts/get_unique_filtered_barcodes.py -b {input.barcodes} "
+        "-s {params.samples} -o {output}"
 
 rule simulate:
     input: 
@@ -48,7 +50,9 @@ rule simulate:
         reference_dir = directory(config['out'] + "/{rate}/reference_tables")
     conda: "envs/default.yml"
     shell:
-        "scripts/simulate_doublets.py -b {input.barcodes_dir} -d {wildcards.rate} -o {output.new_barcodes_dir} -r {output.reference_dir}"
+        "mkdir -p {output} && "
+        "scripts/simulate_doublets.py -b {input.barcodes_dir} -d {wildcards.rate} "
+        "-o {output.new_barcodes_dir} -r {output.reference_dir}"
 
 rule new_bam:
     input:
