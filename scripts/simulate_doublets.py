@@ -111,7 +111,7 @@ def main():
 			else:
 				new_bcs.append(bcs[i])
 		print('%d mismatches observed\n' % mismatches)
-		new_bcs = sorted(new_bcs)
+		# new_bcs = sorted(new_bcs)
 		with gzip.open('%s/%s.tsv.gz' % (args.out_dir, sample), 'wb') as fh:
 			for bc in new_bcs:
 				fh.write(bc)
