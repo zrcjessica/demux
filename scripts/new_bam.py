@@ -28,15 +28,6 @@ def read_barcodes(tsv):
         }
     return barcodes
 
-def get_reads(reads):
-    """ get the reads but first get the tags from the first line"""
-    read_iter = iter(reads)
-    first = next(read_iter)
-    yield first.tags
-    yield first
-    for read in reads:
-        yield read
-
 def main(barcodes, reads, in_format=None, no_filter=False, keep_tags=False):
     """
         read the reads and alter their barcodes, returning each line as a
@@ -64,30 +55,18 @@ def main(barcodes, reads, in_format=None, no_filter=False, keep_tags=False):
         }]
     yield head
 
-    reads = get_reads(reads)
-    # get the indices of each tag for fast lookup later
-    tag_idxs = {}
-    tags = next(reads)
-    for i in range(len(tags)):
-        if tags[i][0] in ('CB', 'RG', 'PG'):
-            tag_idxs[tags[i][0]] = i
-
     # iterate through each read
     for read in reads:
-        tags = read.tags
         # check to see whether the CB tag needs to be changed
-        if tags[tag_idxs['CB']][1] in barcodes:
-            # get the new CB tag
-            tags[tag_idxs['CB']] = ('CB', barcodes[tags[tag_idxs['CB']][1]])
+        if read.has_tag('CB') and read.get_tag('CB') in barcodes:
+            # set the new CB tag
+            read.set_tag('CB', barcodes[read.get_tag('CB')])
         elif not no_filter:
             continue
         if not keep_tags:
             # also change the RG and PG tags so they are consistent across every sample
-            tags[tag_idxs['RG']] = ('RG', RG_ID)
-            if 'PG' in tag_idxs:
-                tags.pop(tag_idxs['PG'])
-        # apply the tags back to the read
-        read.tags = tags
+            read.set_tag('RG', RG_ID)
+            read.set_tag('PG', None)
         yield read
 
 def write_reads(out, reads, out_format=None):
