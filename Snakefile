@@ -73,8 +73,9 @@ rule merge:
     output:
         bam = temp(config['out']+"/{rate}/merge.bam")
     conda: "envs/default.yml"
+    threads: 12
     shell:
-        "samtools merge -h {input[0]} -cf {output} {input}"
+        "samtools merge -@ {threads} -h {input[0]} -cf {output} {input}"
 
 rule sort:
     input: rules.merge.output.bam
@@ -82,8 +83,9 @@ rule sort:
         bam = config['out']+"/{rate}/merge.sort.bam",
         idx = config['out']+"/{rate}/merge.sort.bam.bai"
     conda: "envs/default.yml"
+    threads: 12
     shell:
-        "samtools sort -o {output.bam} {input} && samtools index {output.bam}"
+        "samtools sort -@ {threads} -o {output.bam} {input} && samtools index {output.bam}"
 
 # TODO: create a rule to handle conflicting UMIs?
 
