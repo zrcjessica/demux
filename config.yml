@@ -33,7 +33,7 @@ data:
 # Which samples from the data should we use?
 # This should be a subset of the samples in "data" above
 # If this line is commented out or the list is empty, all samples will be used.
-samples: [Rat_Opioid_HS_1]
+samples: [Rat_Opioid_HS_1, Rat_Opioid_HS_2]
 
 # A VCF containing genotypes for every sample
 # required!

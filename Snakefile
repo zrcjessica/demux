@@ -38,7 +38,9 @@ rule unique_barcodes:
     output: directory(config['out'] + "/unique_filtered_barcodes")
     conda: "envs/default.yml"
     shell:
-        "scripts/get_unique_filtered_barcodes.py -b {input.barcodes} -s {params.samples} -o {output}"
+        "mkdir -p {output} && "
+        "scripts/get_unique_filtered_barcodes.py -b {input.barcodes} "
+        "-s {params.samples} -o {output}"
 
 rule simulate:
     input: 
@@ -48,18 +50,22 @@ rule simulate:
         reference_dir = directory(config['out'] + "/{rate}/reference_tables")
     conda: "envs/default.yml"
     shell:
-        "scripts/simulate_doublets.py -b {input.barcodes_dir} -d {wildcards.rate} -o {output.new_barcodes_dir} -r {output.reference_dir}"
+        "mkdir -p {output} && "
+        "scripts/simulate_doublets.py -b {input.barcodes_dir} -d {wildcards.rate} "
+        "-o {output.new_barcodes_dir} -r {output.reference_dir}"
 
 rule new_bam:
     input:
-        barcode_dir = rules.simulate.output[0],
+        old_barcodes = rules.unique_barcodes.output[0],
+        new_barcodes = rules.simulate.output.new_barcodes_dir,
         reads = lambda wildcards: config['data'][wildcards.samp]['reads']
     params:
-        barcodes = lambda wildcards, input: str(Path(input.barcode_dir))+"/"+wildcards.samp+".tsv.gz"
+        old = lambda wildcards, input: str(Path(input.old_barcodes))+"/"+wildcards.samp+".tsv.gz",
+        new = lambda wildcards, input: str(Path(input.new_barcodes))+"/"+wildcards.samp+".tsv.gz"
     output: config['out']+"/{rate}/new_reads/{samp}.bam"
     conda: "envs/default.yml"
     shell:
-        "scripts/new_bam.py -o {output} {params} {input.reads}"
+        "scripts/new_bam.py -o {output} <(paste <(zcat {params.old:q}) <(zcat {params.new:q})) {input.reads}"
 
 rule merge:
     input:
@@ -90,7 +96,7 @@ rule demux:
         out = lambda wildcards, output: output.best[:-len('.best')]
     output:
         best = config['out']+"/{rate}/demuxlet/out.best",
-        sing = config['out']+"/{rate}/demuxlet/out.sing",
+        sing = config['out']+"/{rate}/demuxlet/out.single",
         sing2 = config['out']+"/{rate}/demuxlet/out.sing2"
     conda: "envs/demuxlet.yml"
     shell:
