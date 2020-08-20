@@ -34,38 +34,42 @@ rule unique_barcodes:
     input:
         barcodes = [config['data'][samp]['barcodes'] for samp in config['samples']]
     params:
-        samples = config['samples']
-    output: directory(config['out'] + "/unique_filtered_barcodes")
+        samples = config['samples'],
+        output_dir = lambda wildcards, output: Path(output[0]).parent
+    output:
+        expand(config['out'] + "/unique_filtered_barcodes/{samp}.tsv.gz", samp=config['samples'])
     conda: "envs/default.yml"
     shell:
         "mkdir -p {output} && "
         "scripts/get_unique_filtered_barcodes.py -b {input.barcodes} "
-        "-s {params.samples} -o {output}"
+        "-s {params.samples} -o {params.output_dir}"
 
 rule simulate:
-    input: 
-        barcodes_dir = rules.unique_barcodes.output
+    input: rules.unique_barcodes.output
+    params:
+        barcodes_dir = lambda wildcards, input: Path(input[0]).parent,
+        reference_dir = lambda wildcards, output: Path(output.diff_reference).parent
     output:
         new_barcodes_dir = directory(config['out'] + "/{rate}/renamed_filtered_barcodes"),
-        reference_dir = directory(config['out'] + "/{rate}/reference_tables")
+        diff_reference = config['out'] + "/{rate}/reference_tables/diff_sample_doublets_reference.tsv",
+        same_reference = config['out'] + "/{rate}/reference_tables/same_sample_doublets_reference.tsv"
     conda: "envs/default.yml"
     shell:
-        "mkdir -p {output} && "
-        "scripts/simulate_doublets.py -b {input.barcodes_dir} -d {wildcards.rate} "
-        "-o {output.new_barcodes_dir} -r {output.reference_dir}"
+        "mkdir -p {output.new_barcodes_dir} {params.reference_dir} && "
+        "scripts/simulate_doublets.py -b {params.barcodes_dir} -d {wildcards.rate} "
+        "-o {output.new_barcodes_dir} -r {params.reference_dir}"
 
 rule new_bam:
     input:
-        old_barcodes = rules.unique_barcodes.output[0],
-        new_barcodes = rules.simulate.output.new_barcodes_dir,
+        old = config['out'] + "/unique_filtered_barcodes/{samp}.tsv.gz",
+        new = rules.simulate.output.new_barcodes_dir,
         reads = lambda wildcards: config['data'][wildcards.samp]['reads']
     params:
-        old = lambda wildcards, input: str(Path(input.old_barcodes))+"/"+wildcards.samp+".tsv.gz",
-        new = lambda wildcards, input: str(Path(input.new_barcodes))+"/"+wildcards.samp+".tsv.gz"
+        new_barcodes = lambda wildcards, input: input.new+"/"+wildcards.samp+".tsv.gz"
     output: config['out']+"/{rate}/new_reads/{samp}.bam"
     conda: "envs/default.yml"
     shell:
-        "scripts/new_bam.py -o {output} <(paste <(zcat {params.old:q}) <(zcat {params.new:q})) {input.reads}"
+        "scripts/new_bam.py -o {output} <(paste <(zcat {input.old:q}) <(zcat {params.new_barcodes:q})) {input.reads}"
 
 rule merge:
     input:
