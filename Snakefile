@@ -27,7 +27,7 @@ config['out'] = check_config('out', default='out')
 rule all:
     input:
         expand(
-            config['out']+"/{rate}/demuxlet/out.best", rate=check_config('rate', default=0.3)
+            config['out']+"/{rate}/results", rate=check_config('rate', default=0.3)
         )
 
 rule unique_barcodes:
@@ -59,17 +59,33 @@ rule simulate:
         "scripts/simulate_doublets.py -b {params.barcodes_dir} -d {wildcards.rate} "
         "-o {output.new_barcodes_dir} -r {params.reference_dir}"
 
+rule table:
+    """ create a table containing all of the barcodes before and after """
+    input:
+        old = rules.unique_barcodes.output,
+        new = rules.simulate.output.new_barcodes_dir,
+    params:
+        new = lambda wildcards, input: expand(input.new+"/{samp}.tsv.gz", samp=config['samples'])
+    output:
+        config['out'] + "/{rate}/barcodes_table.tsv"
+    shell:
+        "cat "+' '.join([
+            "<(paste <(zcat {input.old["+i+"]:q}) <(zcat {params.new["+i+"]:q})"+\
+            " | sed 's/^/{config[data]["+config['samples'][int(i)]+"][vcf_id]}\\t/g')"
+            for i in map(lambda x: str(x), range(len(config['samples'])))
+        ])+" >{output}"
+
 rule new_bam:
     input:
-        old = config['out'] + "/unique_filtered_barcodes/{samp}.tsv.gz",
-        new = rules.simulate.output.new_barcodes_dir,
+        barcodes = rules.table.output,
         reads = lambda wildcards: config['data'][wildcards.samp]['reads']
     params:
-        new_barcodes = lambda wildcards, input: input.new+"/"+wildcards.samp+".tsv.gz"
+        vcf_id = lambda wildcards: config['data'][wildcards.samp]['vcf_id']
     output: config['out']+"/{rate}/new_reads/{samp}.bam"
     conda: "envs/default.yml"
     shell:
-        "scripts/new_bam.py -o {output} <(paste <(zcat {input.old:q}) <(zcat {params.new_barcodes:q})) {input.reads}"
+        "scripts/new_bam.py -o {output} "
+        "<(grep -P '^{params.vcf_id}\\t' {input.barcodes} | cut -f 2-) {input.reads}"
 
 rule merge:
     input:
@@ -108,4 +124,11 @@ rule demux:
     shell:
         "demuxlet --sm-list <(echo -e \"{params.samps}\") --sam {input.bam} --vcf {input.vcf} --out {params.out}"
 
-# TODO: create a rule to summarize the simulation results
+rule results:
+    input:
+        rules.demux.output.best,
+        rules.table.output
+    output: directory(config['out']+"/{rate}/results")
+    conda: "envs/default.yml"
+    shell:
+        "scripts/results.py {input} {output}"
