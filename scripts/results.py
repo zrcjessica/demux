@@ -34,7 +34,7 @@ def get_truth(truth):
     barcodes = barcodes.groupby('BARCODE').apply(lambda grp: list(grp['samp'])).to_frame('sample')
     barcodes.insert(0, 'type', barcodes['sample'].map(lambda x: ['SNG', 'DBL'][len(x)-1]), True)
     # convert lists to tuples b/c they're immutable
-    barcodes['sample'] = barcodes['sample'].apply(tuple)
+    barcodes['sample'] = barcodes['sample'].apply(lambda samp: tuple(str(s) for s in samp))
     return barcodes
 
 def type_metrics(predicts, truth):
@@ -51,30 +51,39 @@ def type_metrics(predicts, truth):
     )
     return scores
 
-def hamming(predicts, truth):
+def hamming(predicts, truth, samples):
     """ return the hamming loss for these droplets """
-    preds = predicts.copy()
-    # convert ambiguous droplets to None
-    preds['sample'][preds['type'] == 'AMB'] = (['N/A'],)
-    samples = preds['sample'].explode().unique()
     # convert to matrix format
-    prds = MultiLabelBinarizer(classes = samples)
-    prds = prds.fit_transform(preds['sample'])
-    trth = MultiLabelBinarizer(classes = samples)
-    trth = trth.fit_transform(truth['sample'])
-    return metrics.hamming_loss(trth, prds)
+    preds_matrix = MultiLabelBinarizer(classes = samples)
+    preds_matrix = preds_matrix.fit_transform(predicts['sample'].copy())
+    trth_matrix = MultiLabelBinarizer(classes = samples)
+    trth_matrix = trth_matrix.fit_transform(truth['sample'].copy())
+    return metrics.hamming_loss(trth_matrix, preds_matrix)
 
 def hammings(predicts, truth):
+    """ return the hamming loss for doublets, singlets, and both """
+    # preprocess the predicts dataframe by converting ambiguous droplets to None
+    preds = predicts.copy()
+    preds.loc[preds['type'] == 'AMB', 'sample'] = [('NA',)] * sum(preds['type'] == 'AMB')
+    # and get the union of the samples from the predicts and the truth
+    samples = set(preds['sample'].explode().unique())
+    samples |= set(truth['sample'].explode().unique())
+    samples = sorted(tuple(samples))
+    # get the hamming losses
     labels = {'DBL':0, 'SNG':0, 'BOTH':0}
     for label in labels:
-        lab = list(label)
+        lab = [label]
         if lab == ['BOTH']:
-            lab = ['DBL', 'SNP']
+            lab = ['DBL', 'SNG']
         trth = truth[truth['type'].isin(lab)]
-        prds = predicts.loc[trth.index]
-        labels[label] = hamming(prds, trth)
+        prds = preds.loc[trth.index].copy()
+        labels[label] = hamming(prds, trth, samples)
     embed()
     return labels
+
+def cohen_kappa(predicts, truth):
+    """ calculate cohen's kappa for the singlets """
+    pass
 
 def main(demux, truth, out):
     # retrieve the predicted samples from demuxlet
