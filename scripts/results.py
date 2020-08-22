@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
+import sys
 import argparse
 import numpy as np
 import pandas as pd
 from pathlib import Path
 from sklearn import metrics
 from sklearn.preprocessing import MultiLabelBinarizer
-from IPython import embed
 
 
 # OUR QUESTIONS
@@ -78,21 +78,29 @@ def hammings(predicts, truth):
         trth = truth[truth['type'].isin(lab)]
         prds = preds.loc[trth.index].copy()
         labels[label] = hamming(prds, trth, samples)
-    embed()
     return labels
 
 def cohen_kappa(predicts, truth):
     """ calculate cohen's kappa for the singlets """
-    pass
+    preds = predicts.loc[preds['type'] == 'SNG', 'sample']
+    trth = truth.loc[preds['type'] == 'SNG', 'sample']
+    # agh this won't work because they won't share the same droplets!
+    return metrics.cohen_kappa_score(preds, trth)
 
-def main(demux, truth, out):
+def main(demux, truth):
     # retrieve the predicted samples from demuxlet
     predicts = get_predicts(demux)
     # retrieve the true samples from the simulation script
     truth = get_truth(truth)
     type_scores = type_metrics(predicts, truth)
-    dbl_score = hammings(predicts, truth)
-    return type_scores, dbl_score
+    ham_score = hammings(predicts, truth)
+    return type_scores, ham_score
+
+def write_out(out, type_scores, ham_score):
+    print("precision/recall:", file=out)
+    print(type_scores, file=out)
+    print("\nhamming loss:", file=out)
+    print(ham_score, file=out)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Summarize results from a demultiplexing simulation.")
@@ -103,8 +111,9 @@ if __name__ == "__main__":
         "truth", type=Path, help="the true labels"
     )
     parser.add_argument(
-        "out", type=Path, help="a directory for our output"
+        "out", type=Path, nargs='?', default=sys.stdout, help="a directory for our output"
     )
     args = parser.parse_args()
 
-    results = main(args.demux, args.truth, args.out)
+    results = main(args.demux, args.truth)
+    write_out(args.out, *results)
