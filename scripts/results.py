@@ -12,7 +12,7 @@ from sklearn.preprocessing import MultiLabelBinarizer
 # OUR QUESTIONS
 # 1) how many droplets were correctly classified as doublets vs singlets?
 # 2) were doublets assigned to the correct samples? (hamming loss)
-# 3) were singlets assigned to the correct samples? (also cohen's kappa)
+# 3) were singlets assigned to the correct samples? (also hamming loss)
 
 
 def get_predicts(demux):
@@ -116,4 +116,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     results = main(args.demux, args.truth)
-    write_out(args.out, *results)
+    write_out(sys.stdout, *results)

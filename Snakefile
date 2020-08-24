@@ -27,7 +27,7 @@ config['out'] = check_config('out', default='out')
 rule all:
     input:
         expand(
-            config['out']+"/{rate}/results", rate=check_config('rate', default=0.3)
+            config['out']+"/{rate}/results.txt", rate=check_config('rate', default=0.3)
         )
 
 rule unique_barcodes:
@@ -128,7 +128,7 @@ rule results:
     input:
         rules.demux.output.best,
         rules.table.output
-    output: directory(config['out']+"/{rate}/results")
+    output: config['out']+"/{rate}/results.txt"
     conda: "envs/default.yml"
     shell:
-        "scripts/results.py {input} {output}"
+        "scripts/results.py {input} > {output}"
