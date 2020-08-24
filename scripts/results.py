@@ -51,17 +51,19 @@ def type_metrics(predicts, truth):
     )
     return scores
 
-def hamming(predicts, truth, samples):
-    """ return the hamming loss for these droplets """
+def hamming_exactmatch(predicts, truth, samples, exact=False):
+    """ return the hamming loss (or exact match accuracy) for these droplets """
     # convert to matrix format
     preds_matrix = MultiLabelBinarizer(classes = samples)
     preds_matrix = preds_matrix.fit_transform(predicts['sample'].copy())
     trth_matrix = MultiLabelBinarizer(classes = samples)
     trth_matrix = trth_matrix.fit_transform(truth['sample'].copy())
+    if exact:
+        return metrics.accuracy_score(trth_matrix, preds_matrix)
     return metrics.hamming_loss(trth_matrix, preds_matrix)
 
-def hammings(predicts, truth):
-    """ return the hamming loss for doublets, singlets, and both """
+def hammings_accuracy(predicts, truth, exact=False):
+    """ return the hamming loss (or exact match accuracy) for doublets, singlets, and both """
     # preprocess the predicts dataframe by converting ambiguous droplets to None
     preds = predicts.copy()
     preds.loc[preds['type'] == 'AMB', 'sample'] = [('NA',)] * sum(preds['type'] == 'AMB')
@@ -77,7 +79,7 @@ def hammings(predicts, truth):
             lab = ['DBL', 'SNG']
         trth = truth[truth['type'].isin(lab)]
         prds = preds.loc[trth.index].copy()
-        labels[label] = hamming(prds, trth, samples)
+        labels[label] = hamming_exactmatch(prds, trth, samples, exact)
     return labels
 
 def cohen_kappa(predicts, truth):
@@ -85,6 +87,7 @@ def cohen_kappa(predicts, truth):
     preds = predicts.loc[preds['type'] == 'SNG', 'sample']
     trth = truth.loc[preds['type'] == 'SNG', 'sample']
     # agh this won't work because they won't share the same droplets!
+    # potential solution: just calculate cohen's kappa among predicted and simulated singlets
     return metrics.cohen_kappa_score(preds, trth)
 
 def main(demux, truth):
@@ -93,14 +96,17 @@ def main(demux, truth):
     # retrieve the true samples from the simulation script
     truth = get_truth(truth)
     type_scores = type_metrics(predicts, truth)
-    ham_score = hammings(predicts, truth)
-    return type_scores, ham_score
+    ham_score = hammings_accuracy(predicts, truth)
+    accuracy_score = hammings_accuracy(predicts, truth, exact=True)
+    return type_scores, ham_score, accuracy_score
 
-def write_out(out, type_scores, ham_score):
+def write_out(out, type_scores, ham_score, accuracy_score):
     print("precision/recall:", file=out)
     print(type_scores, file=out)
     print("\nhamming loss:", file=out)
     print(ham_score, file=out)
+    print("\nsubset accuracy:", file=out)
+    print(accuracy_score, file=out)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Summarize results from a demultiplexing simulation.")
