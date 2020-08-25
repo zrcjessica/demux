@@ -3,3 +3,4 @@ data
 log/
 .snakemake/
 .ipynb_checkpoints/
+tmp/
