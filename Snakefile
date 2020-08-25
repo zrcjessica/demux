@@ -67,13 +67,13 @@ rule table:
     params:
         new = lambda wildcards, input: expand(input.new+"/{samp}.tsv.gz", samp=config['samples'])
     output:
-        config['out'] + "/{rate}/barcodes_table.tsv"
+        config['out'] + "/{rate}/barcodes_table.tsv.gz"
     shell:
         "cat "+' '.join([
             "<(paste <(zcat {input.old["+i+"]:q}) <(zcat {params.new["+i+"]:q})"+\
             " | sed 's/^/{config[data]["+config['samples'][int(i)]+"][vcf_id]}\\t/g')"
             for i in map(lambda x: str(x), range(len(config['samples'])))
-        ])+" >{output}"
+        ])+" | gzip >{output}"
 
 rule new_bam:
     input:
@@ -85,7 +85,7 @@ rule new_bam:
     conda: "envs/default.yml"
     shell:
         "scripts/new_bam.py -o {output} "
-        "<(grep -P '^{params.vcf_id}\\t' {input.barcodes} | cut -f 2-) {input.reads}"
+        "<(zcat {input.barcodes} | grep -P '^{params.vcf_id}\\t' | cut -f 2-) {input.reads}"
 
 rule merge:
     input:
@@ -106,8 +106,6 @@ rule sort:
     threads: 12
     shell:
         "samtools sort -@ {threads} -o {output.bam} {input} && samtools index {output.bam}"
-
-# TODO: create a rule to handle conflicting UMIs?
 
 rule demux:
     input:
