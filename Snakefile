@@ -103,7 +103,7 @@ rule sort:
         bam = config['out']+"/{rate}/merge.sort.bam",
         idx = config['out']+"/{rate}/merge.sort.bam.bai"
     conda: "envs/default.yml"
-    threads: 12
+    threads: 6
     shell:
         "samtools sort -@ {threads} -o {output.bam} {input} && samtools index {output.bam}"
 
