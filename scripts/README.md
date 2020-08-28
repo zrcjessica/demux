@@ -10,5 +10,8 @@ A python script that filters out shared cellular barcodes among the samples.
 ### [new_bam.py](new_bam.py)
 A python script that changes cellular barcodes in a BAM file.
 
+### [results.py](results.py)
+A python script that calculates summarizes the results of the simulation.
+
 ### [simulate_doublets.py](simulate_doublets.py)
 A python script that simulates doublets by deciding how to rename barcodes.

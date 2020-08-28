@@ -15,7 +15,7 @@ def parse_format(fmt, f):
 def tsv_reader(f):
     """ read lines from a file """
     for line in f:
-        yield line.split("\t")
+        yield line.rstrip().split("\t")
 
 def read_barcodes(tsv):
     """ retrieve the tsv file containing the barcodes """

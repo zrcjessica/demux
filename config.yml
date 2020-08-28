@@ -33,13 +33,14 @@ data:
 # Which samples from the data should we use?
 # This should be a subset of the samples in "data" above
 # If this line is commented out or the list is empty, all samples will be used.
-samples: [Rat_Opioid_HS_1, Rat_Opioid_HS_2]
+samples: [Rat_Opioid_HS_1, Rat_Opioid_HS_2, Rat_Opioid_HS_3, Rat_Opioid_HS_4]
 
 # A VCF containing genotypes for every sample
 # required!
 vcf: data/vcf/HS_n10_telese_rename.vcf.gz
 
 # The doublet rate for this simulation
+# Or, if you want to run multiple rates, just provide a list of them
 # Defaults to 0.3 if not provided
 rate: 0.3
 

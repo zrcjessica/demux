@@ -40,12 +40,12 @@ fi
 # check: are we being executed from within qsub?
 if [ "$ENVIRONMENT" = "BATCH" ]; then
 	snakemake \
-	--cluster "qsub -t 1 -V -j y -cwd -o $out_path/qlog" \
+	--cluster "qsub -pe iblm {threads} -t 1 -V -j y -cwd -o $out_path/qlog" \
 	--config out="$out_path" \
 	--latency-wait 60 \
 	--use-conda \
 	-k \
-	-j \
+	-j 24 \
 	"$@" &>>"$out_path/log"
 else
 	snakemake \
@@ -53,7 +53,7 @@ else
 	--latency-wait 60 \
 	--use-conda \
 	-k \
-	-j \
+	-j 24 \
 	"$@" 2>>"$out_path/log" >>"$out_path/qlog"
 fi
 

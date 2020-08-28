@@ -27,45 +27,65 @@ config['out'] = check_config('out', default='out')
 rule all:
     input:
         expand(
-            config['out']+"/{rate}/demuxlet/out.best", rate=check_config('rate', default=0.3)
+            config['out']+"/{rate}/results.{ext}", rate=check_config('rate', default=0.3), ext=['txt', 'png']
         )
 
 rule unique_barcodes:
     input:
         barcodes = [config['data'][samp]['barcodes'] for samp in config['samples']]
     params:
-        samples = config['samples']
-    output: directory(config['out'] + "/unique_filtered_barcodes")
+        samples = config['samples'],
+        output_dir = lambda wildcards, output: Path(output[0]).parent
+    output:
+        expand(config['out'] + "/unique_filtered_barcodes/{samp}.tsv.gz", samp=config['samples'])
     conda: "envs/default.yml"
     shell:
         "mkdir -p {output} && "
         "scripts/get_unique_filtered_barcodes.py -b {input.barcodes} "
-        "-s {params.samples} -o {output}"
+        "-s {params.samples} -o {params.output_dir}"
 
 rule simulate:
-    input: 
-        barcodes_dir = rules.unique_barcodes.output
+    input: rules.unique_barcodes.output
+    params:
+        barcodes_dir = lambda wildcards, input: Path(input[0]).parent,
+        reference_dir = lambda wildcards, output: Path(output.diff_reference).parent
     output:
         new_barcodes_dir = directory(config['out'] + "/{rate}/renamed_filtered_barcodes"),
-        reference_dir = directory(config['out'] + "/{rate}/reference_tables")
+        diff_reference = config['out'] + "/{rate}/reference_tables/diff_sample_doublets_reference.tsv",
+        same_reference = config['out'] + "/{rate}/reference_tables/same_sample_doublets_reference.tsv"
     conda: "envs/default.yml"
     shell:
-        "mkdir -p {output} && "
-        "scripts/simulate_doublets.py -b {input.barcodes_dir} -d {wildcards.rate} "
-        "-o {output.new_barcodes_dir} -r {output.reference_dir}"
+        "mkdir -p {output.new_barcodes_dir} {params.reference_dir} && "
+        "scripts/simulate_doublets.py -b {params.barcodes_dir} -d {wildcards.rate} "
+        "-o {output.new_barcodes_dir} -r {params.reference_dir}"
+
+rule table:
+    """ create a table containing all of the barcodes before and after """
+    input:
+        old = rules.unique_barcodes.output,
+        new = rules.simulate.output.new_barcodes_dir,
+    params:
+        new = lambda wildcards, input: expand(input.new+"/{samp}.tsv.gz", samp=config['samples'])
+    output:
+        config['out'] + "/{rate}/barcodes_table.tsv.gz"
+    shell:
+        "cat "+' '.join([
+            "<(paste <(zcat {input.old["+i+"]:q}) <(zcat {params.new["+i+"]:q})"+\
+            " | sed 's/^/{config[data]["+config['samples'][int(i)]+"][vcf_id]}\\t/g')"
+            for i in map(lambda x: str(x), range(len(config['samples'])))
+        ])+" | gzip >{output}"
 
 rule new_bam:
     input:
-        old_barcodes = rules.unique_barcodes.output[0],
-        new_barcodes = rules.simulate.output.new_barcodes_dir,
+        barcodes = rules.table.output,
         reads = lambda wildcards: config['data'][wildcards.samp]['reads']
     params:
-        old = lambda wildcards, input: str(Path(input.old_barcodes))+"/"+wildcards.samp+".tsv.gz",
-        new = lambda wildcards, input: str(Path(input.new_barcodes))+"/"+wildcards.samp+".tsv.gz"
+        vcf_id = lambda wildcards: config['data'][wildcards.samp]['vcf_id']
     output: config['out']+"/{rate}/new_reads/{samp}.bam"
     conda: "envs/default.yml"
     shell:
-        "scripts/new_bam.py -o {output} <(paste <(zcat {params.old:q}) <(zcat {params.new:q})) {input.reads}"
+        "scripts/new_bam.py -o {output} "
+        "<(zcat {input.barcodes} | grep -P '^{params.vcf_id}\\t' | cut -f 2-) {input.reads}"
 
 rule merge:
     input:
@@ -73,8 +93,9 @@ rule merge:
     output:
         bam = temp(config['out']+"/{rate}/merge.bam")
     conda: "envs/default.yml"
+    threads: 12
     shell:
-        "samtools merge -h {input[0]} -cf {output} {input}"
+        "samtools merge -@ {threads} -h {input[0]} -cf {output} {input}"
 
 rule sort:
     input: rules.merge.output.bam
@@ -82,10 +103,9 @@ rule sort:
         bam = config['out']+"/{rate}/merge.sort.bam",
         idx = config['out']+"/{rate}/merge.sort.bam.bai"
     conda: "envs/default.yml"
+    threads: 6
     shell:
-        "samtools sort -o {output.bam} {input} && samtools index {output.bam}"
-
-# TODO: create a rule to handle conflicting UMIs?
+        "samtools sort -@ {threads} -o {output.bam} {input} && samtools index {output.bam}"
 
 rule demux:
     input:
@@ -102,4 +122,13 @@ rule demux:
     shell:
         "demuxlet --sm-list <(echo -e \"{params.samps}\") --sam {input.bam} --vcf {input.vcf} --out {params.out}"
 
-# TODO: create a rule to summarize the simulation results
+rule results:
+    input:
+        rules.demux.output.best,
+        rules.table.output
+    output:
+        stats = config['out']+"/{rate}/results.txt",
+        plot = config['out']+"/{rate}/results.png"
+    conda: "envs/default.yml"
+    shell:
+        "scripts/results.py {input} {output.plot} > {output.stats}"
