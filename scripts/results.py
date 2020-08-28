@@ -6,24 +6,25 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from sklearn import metrics
+import matplotlib.pyplot as plt
+from sklearn.metrics import precision_recall_curve
 from sklearn.preprocessing import MultiLabelBinarizer
-
-
-# OUR QUESTIONS
-# 1) how many droplets were correctly classified as doublets vs singlets?
-# 2) were doublets assigned to the correct samples? (hamming loss)
-# 3) were singlets assigned to the correct samples? (also hamming loss)
+from sklearn.metrics import plot_precision_recall_curve
 
 
 def get_predicts(demux):
     """ parse the .best file into a pd dataframe """
-    barcodes = pd.read_csv(demux, sep="\t", usecols=['BARCODE', 'BEST'], index_col='BARCODE')
-    # TODO: include probabilities so that you can look at curves?
+    barcodes = pd.read_csv(demux, sep="\t", usecols=['BARCODE', 'BEST', 'LLK12', 'SNG.LLK1'], index_col='BARCODE')
+    # create doublet pseudo-probability: LLK12
+    prob = barcodes['SNG.LLK1']
+    # now parse the BEST column
     barcodes = barcodes['BEST'].str.split('-', n=1, expand=True)
     barcodes.columns = ['type', 'sample']
+    # add the prob column back
+    barcodes['prob'] = prob
     barcodes['sample'] = barcodes['sample'].str.split('-')
     # remove the prob suffix from each doublet
-    barcodes['sample'][barcodes['type'] == 'DBL'] = barcodes['sample'][barcodes['type'] == 'DBL'].apply(lambda row: row[:2])
+    barcodes.loc[barcodes['type'] == 'DBL', 'sample'] = barcodes['sample'][barcodes['type'] == 'DBL'].apply(lambda row: row[:2])
     # convert lists to tuples b/c they're immutable
     barcodes['sample'] = barcodes['sample'].apply(tuple)
     return barcodes
@@ -90,23 +91,47 @@ def cohen_kappa(predicts, truth):
     # potential solution: just calculate cohen's kappa among predicted and simulated singlets
     return metrics.cohen_kappa_score(preds, trth)
 
-def main(demux, truth):
+def prc_curve(predicts, truth):
+    """ plot a precision/recall curve for the singlets """
+    precision, recall, thresholds = metrics.precision_recall_curve(
+        truth['type'] == 'SNG',
+        predicts
+    )
+    plt.plot(recall, precision)
+    fig = plt.gcf()
+    plt.xlim([0.0, 1.0])
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    return fig
+
+def main(demux, truth, curve=False):
     # retrieve the predicted samples from demuxlet
     predicts = get_predicts(demux)
+    # extract the probs
+    probs = predicts['prob']
+    predicts.drop('prob', axis=1, inplace=True)
     # retrieve the true samples from the simulation script
     truth = get_truth(truth)
     type_scores = type_metrics(predicts, truth)
     ham_score = hammings_accuracy(predicts, truth)
     accuracy_score = hammings_accuracy(predicts, truth, exact=True)
-    return type_scores, ham_score, accuracy_score
+    if curve:
+        curve = prc_curve(probs, truth)
+        precision, recall = type_scores['SNG'][:2]
+        curve.axes[0].plot(recall, precision, "ob")
+        return type_scores, ham_score, accuracy_score, curve
+    else:
+        return type_scores, ham_score, accuracy_score
 
-def write_out(out, type_scores, ham_score, accuracy_score):
+def write_out(out, curve, type_scores, ham_score, accuracy_score, prc_curve=None):
     print("precision/recall:", file=out)
     print(type_scores, file=out)
     print("\nhamming loss:", file=out)
     print(ham_score, file=out)
     print("\nsubset accuracy:", file=out)
     print(accuracy_score, file=out)
+    if curve:
+        prc_curve.savefig(curve, bbox_inches='tight')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Summarize results from a demultiplexing simulation.")
@@ -117,9 +142,9 @@ if __name__ == "__main__":
         "truth", type=Path, help="the true labels"
     )
     parser.add_argument(
-        "out", type=Path, nargs='?', default=sys.stdout, help="a directory for our output"
+        "curve", type=Path, nargs='?', default=None, help="the path to a file to which to write a precision/recall curve for the singlets if desired (default: don't do it)"
     )
     args = parser.parse_args()
 
-    results = main(args.demux, args.truth)
-    write_out(sys.stdout, *results)
+    results = main(args.demux, args.truth, bool(args.curve))
+    write_out(sys.stdout, args.curve, *results)
