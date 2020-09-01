@@ -4,7 +4,7 @@ A pipeline for running single-cell demultiplexing simulations with [demuxlet](ht
 # Introduction 
 **demux** is a Snakemake pipeline for simulating a multiplexed droplet scRNA-seq (dscRNA-seq) experiment using data from individual scRNA-seq samples and quantifying the effectiveness of deconvoluting the sample identify of each cell in the simulated dataset with **demuxlet**. Such an analysis is helpful for reducing the cost of library preparations for dscRNA-seq experiments.
 
-Here is an example flowchart, depicting the **demux** pipeline with five input samples.
+Here is an example flowchart depicting the **demux** pipeline with five input samples.
 ![flowchart](dag.png)
 
 Each step is briefly described below:
