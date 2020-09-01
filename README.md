@@ -10,7 +10,7 @@ A pipeline for running single-cell demultiplexing simulations with [demuxlet](ht
 We then modify the original BAM files to reflect the simulated doublets by making changes to the cell barcodes and merge these new BAM files with [samtools](http://www.htslib.org/). Finally, we run *demuxlet* on this BAM file and analyze the results. 
 
 Here is an example flowchart, depicting the *demux* pipeline with five input samples.
-
+![flowchart](dag.png)
 # Download
 Execute the following command.
 ```
@@ -26,17 +26,14 @@ conda create -n snakemake -c bioconda -c conda-forge 'snakemake==5.18.0' --no-ch
 We highly recommend you install [Snakemake via conda](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html#installation-via-conda) like this so that you can use the `--use-conda` flag when calling `snakemake` to let it [automatically handle all dependencies](https://snakemake.readthedocs.io/en/stable/snakefiles/deployment.html#integrated-package-management) of the pipeline. Otherwise, you must manually install the dependencies listed in the [env files](envs).
 
 ## Input
-*demux* minimally requires the following inputs, specified in the `config.yml` file: 
+*demux* minimally requires the following inputs, which must be [specified in the `config.yml` file](https://github.com/zrcjessica/demux#executing-the-pipeline-on-your-own-data): 
 - a list of individually processed samples 
 - for each sample above, the following [Cell Ranger](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/output/overview) outputs from the `cellranger count` pipeline:
   - [Barcoded BAM](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/output/overview#count)
   - [Filtered Feature-Barcode Matrix](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/output/matrices)
 - a vcf file containing the genotypes of all samples from above
 
-Other input parameters to *demux* include:
-- `rate`: doublet rate, or the percentage of all cells from simulated multiplexed dscRNA-seq experiment expected to be found in doublets. Defaults to 0.3.
-- `samples`: a list specifying a subset of all the individually processed samples for which you have data available, which you want to use as input for the simulated multiplexed dscRNA-seq experiment. Defaults to all samples.
-- `out`: path to directory where output files will be written. Defaults to `./out`.
+[See below for additional input parameters.](https://github.com/zrcjessica/demux#executing-the-pipeline-on-your-own-data)
 
 It is recommended to symlink your data into the gitignored `data/` folder:
 ```
