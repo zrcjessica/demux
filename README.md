@@ -8,16 +8,16 @@ Here is an example flowchart depicting the **demux** pipeline with five input sa
 ![flowchart](dag.png)
 
 Each step is briefly described below:
-- `unique_barcodes`: aggregate cell barcodes across all samples provided as input and remove any cell barcodes that appear more than once
-- `simulate`: simulate a multiplexed dscRNA-seq experiment with a specified doublet rate (default: 0.3). The doublet rate specifies the percentage of cells from the aggregate dataset expected to be found in doubletes. We define two types of doublets:
+1. `unique_barcodes`: aggregate cell barcodes across all samples provided as input and remove any cell barcodes that appear more than once
+2. `simulate`: simulate a multiplexed dscRNA-seq experiment with a specified doublet rate (default: 0.3). The doublet rate specifies the percentage of cells from the aggregate dataset expected to be found in doubletes. We define two types of doublets:
   1. doublets containing cells from different samples
   2. doublets containing cells from the same samples
-- `table`: create a reference table mapping the original (ground truth) barcodes to the new barcodes (for analyzing **demuxlet** performance)
-- `new bam`: edit the BAM files corresponding to each sample provided as input to reflect simulated doublets. For ever pair of cells randomly selected to be in a doublet, we change the cell barcode of one cell in the pair to match that of the other cell. 
-- `merge`: merge the edited BAM files into one BAM file to reflect a multiplexed experiment.
-- `sort`: sort the merged BAM file
-- `demux`: run **demuxlet** with the BAM file as input
-- `results`: analyze **demuxlet** performance
+3. `table`: create a reference table mapping the original (ground truth) barcodes to the new barcodes (for analyzing **demuxlet** performance)
+4. `new bam`: edit the BAM files corresponding to each sample provided as input to reflect simulated doublets. For ever pair of cells randomly selected to be in a doublet, we change the cell barcode of one cell in the pair to match that of the other cell. 
+5. `merge`: merge the edited BAM files into one BAM file to reflect a multiplexed experiment.
+6. `sort`: sort the merged BAM file
+7. `demux`: run **demuxlet** with the BAM file as input
+8. `results`: analyze **demuxlet** performance
 
 # Download
 Execute the following command.
@@ -69,11 +69,16 @@ qsub run
 
 ## Executing the pipeline on your own data
 You must modify [the config.yml file](config.yml) to specify paths to your data. The config file is currently configured to run the pipeline on our data (in the git-ignored `data/` folder). The config file contains the following variables:
-- `data`*: The `data` variable contains nested variables for each of your samples, with the paths to their correpsonding `reads` and `barcodes` files (Cell Ranger output) as well as the sample's `vcf_id`. 
-- `vcf`*: Give the path to the vcf file containing genotypes for all samples nested in the `data` variable.
-- `samples`: List the samples from those nested in the `data` variable that you want to be included as input to the demultiplexing simulation. If this line is not provided or commented out, all samples from the `data` variable will be used.
-- `rate`: Doublet rate to be used for demultiplexing simulations. Defaults to 0.3.
-- `out`: Path to directory in which to write output files. If not provided, defaults to `out`. The directory will be created if it does not already exist. 
+##### `data`*
+The `data` variable contains nested variables for each of your samples, with the paths to their corresponding BAM (`reads`) and filtered barcodes (`barcodes`) files (Cell Ranger output) as well as the sample's `vcf_id`. 
+##### `vcf`*
+Give the path to the vcf file containing genotypes for all samples nested in the `data` variable.
+##### `samples`
+List the samples from those nested in the `data` variable that you want to be included as input to the demultiplexing simulation. If this line is not provided or commented out, all samples from the `data` variable will be used.
+##### `rate` 
+Doublet rate to be used for demultiplexing simulations. Defaults to 0.3.
+##### `out` 
+Path to directory in which to write output files. If not provided, defaults to `out`. The directory will be created if it does not already exist. 
 
 \* Inputs required
 
