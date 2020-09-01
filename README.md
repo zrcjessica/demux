@@ -69,12 +69,12 @@ qsub run
 
 ## Executing the pipeline on your own data
 You must modify [the config.yml file](config.yml) to specify paths to your data. The config file is currently configured to run the pipeline on our data (in the git-ignored `data/` folder). The config file contains the following variables:
-- `data`<sup>*</sup>: The `data` variable contains nested variables for each of your samples and their correpsonding `reads`, and `barcodes` files (10X output) as well as the sample's `vcf_id`. 
+- `data`*: The `data` variable contains nested variables for each of your samples and their correpsonding `reads`, and `barcodes` files (10X output) as well as the sample's `vcf_id`. 
+- `vcf`*: Give the path to the vcf file containing genotypes for all samples nested in the `data` variable.
 - `samples`: List the samples from those nested in the `data` variable that you want to be included as input to the demultiplexing simulation. If this line is not provided or commented out, all samples from the `data` variable will be used.
-- `vcf`<sup>*</sup>: Give the path to the vcf file containing genotypes for all samples nested in the `data` variable.
 - `rate`: Doublet rate to be used for demultiplexing simulations. Defaults to 0.3.
 - `out`: Path to directory in which to write output files. If not provided, defaults to `out`. The directory will be created if it does not already exist. 
-
+* Inputs required
 
 # Files and directories
 ### [Snakefile](Snakefile)
