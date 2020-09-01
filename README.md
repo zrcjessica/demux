@@ -2,15 +2,23 @@
 A pipeline for running single-cell demultiplexing simulations with [demuxlet](https://github.com/statgen/demuxlet).
 
 # Introduction 
-*demux* is a Snakemake pipeline for simulating a multiplexed droplet scRNA-seq (dscRNA-seq) experiment using data from individual scRNA-seq samples, and quantifying the effectiveness of deconvoluting the sample identify of each cell in a simulated, multiplexed experiment with *demuxlet*. Such an analysis is helpful for reducing the cost of library preparations for dscRNA-seq experiments.
-
-*demux* aggregates cell barcodes from scRNA-seq data from a number of individual samples and simulates a multiplexed dscRNA-seq experiment by randomly assigning a subset of the aggregate cells, determined by a defined doublet rate, to doublets. We define two types of doublets:
-1. doublets containing cells from different samples
-2. doublets containing cells from the same samples
-We then modify the original BAM files to reflect the simulated doublets by making changes to the cell barcodes and merge these new BAM files with [samtools](http://www.htslib.org/). Finally, we run *demuxlet* on this BAM file and analyze the results. 
+**demux** is a Snakemake pipeline for simulating a multiplexed droplet scRNA-seq (dscRNA-seq) experiment using data from individual scRNA-seq samples and quantifying the effectiveness of deconvoluting the sample identify of each cell in the simulated dataset with **demuxlet**. Such an analysis is helpful for reducing the cost of library preparations for dscRNA-seq experiments.
 
 Here is an example flowchart, depicting the *demux* pipeline with five input samples.
 ![flowchart](dag.png)
+
+Each step is briefly described below:
+- `unique_barcodes`: aggregate cell barcodes across all samples provided as input and remove any cell barcodes that appear more than once
+- `simulate`: simulate a multiplexed dscRNA-seq experiment with a specified doublet rate (default: 0.3). The doublet rate specifies the percentage of cells from the aggregate dataset expected to be found in doubletes. We define two types of doublets:
+  1. doublets containing cells from different samples
+  2. doublets containing cells from the same samples
+- `table`: create a reference table mapping the original (ground truth) barcodes to the new barcodes (for analyzing **demuxlet** performance)
+- `new bam`: edit the BAM files corresponding to each sample provided as input to reflect simulated doublets. For ever pair of cells randomly selected to be in a doublet, we change the cell barcode of one cell in the pair to match that of the other cell. 
+- `merge`: merge the edited BAM files into one BAM file to reflect a multiplexed experiment.
+- `sort`: sort the merged BAM file
+- `demux`: run **demuxlet** with the BAM file as input
+- `results`: analyze **demuxlet** performance
+
 # Download
 Execute the following command.
 ```
@@ -30,7 +38,7 @@ We highly recommend you install [Snakemake via conda](https://snakemake.readthed
 - a list of individually processed samples 
 - for each sample above, the following [Cell Ranger](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/output/overview) outputs from the `cellranger count` pipeline:
   - [Barcoded BAM](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/output/overview#count)
-  - [Filtered Feature-Barcode Matrix](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/output/matrices)
+  - Cell barcodes from [Filtered Feature-Barcode Matrix](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/output/matrices)
 - a vcf file containing the genotypes of all samples from above
 
 [See below for additional input parameters.](https://github.com/zrcjessica/demux#executing-the-pipeline-on-your-own-data)
