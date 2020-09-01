@@ -1,5 +1,5 @@
 # demux
-A pipeline for running single-cell demultiplexing simulations.
+A pipeline for running single-cell demultiplexing simulations with [demuxlet](https://github.com/statgen/demuxlet).
 
 # download
 Execute the following command.
