@@ -74,7 +74,7 @@ You must modify [the config.yml file](config.yml) to specify paths to your data.
 - `samples`: List the samples from those nested in the `data` variable that you want to be included as input to the demultiplexing simulation. If this line is not provided or commented out, all samples from the `data` variable will be used.
 - `rate`: Doublet rate to be used for demultiplexing simulations. Defaults to 0.3.
 - `out`: Path to directory in which to write output files. If not provided, defaults to `out`. The directory will be created if it does not already exist. 
-* Inputs required
+\* Inputs required
 
 # Files and directories
 ### [Snakefile](Snakefile)
