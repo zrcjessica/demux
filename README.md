@@ -8,16 +8,14 @@ Here is an example flowchart depicting the **demux** pipeline with five input sa
 ![flowchart](dag.png)
 
 Each step is briefly described below:
-1. `unique_barcodes`: aggregate cell barcodes across all samples provided as input and remove any cell barcodes that appear more than once
-2. `simulate`: simulate a multiplexed dscRNA-seq experiment with a specified doublet rate (default: 0.3). The doublet rate specifies the percentage of cells from the aggregate dataset expected to be found in doubletes. We define two types of doublets:
-  1. doublets containing cells from different samples
-  2. doublets containing cells from the same samples
-3. `table`: create a reference table mapping the original (ground truth) barcodes to the new barcodes (for analyzing **demuxlet** performance)
-4. `new bam`: edit the BAM files corresponding to each sample provided as input to reflect simulated doublets. For ever pair of cells randomly selected to be in a doublet, we change the cell barcode of one cell in the pair to match that of the other cell. 
-5. `merge`: merge the edited BAM files into one BAM file to reflect a multiplexed experiment.
-6. `sort`: sort the merged BAM file
-7. `demux`: run **demuxlet** with the BAM file as input
-8. `results`: analyze **demuxlet** performance
+1. **unique_barcodes**: aggregate cell barcodes across all samples provided as input and remove any cell barcodes that appear more than once
+2. **simulate**: simulate a multiplexed dscRNA-seq experiment with a specified doublet rate (default: 0.3). The doublet rate specifies the percentage of cells from the aggregate dataset expected to be found in doubletes. We define two types of doublets: (1) doublets containing cells from different samples, and (2) doublets containing cells from the same samples
+3. **table**: create a reference table mapping the original (ground truth) barcodes to the new barcodes (for analyzing **demuxlet** performance)
+4. **new bam**: edit the BAM files corresponding to each sample provided as input to reflect simulated doublets. For ever pair of cells randomly selected to be in a doublet, we change the cell barcode of one cell in the pair to match that of the other cell. 
+5. **merge**: merge the edited BAM files into one BAM file to reflect a multiplexed experiment.
+6. **sort**: sort the merged BAM file
+7. **demux**: run **demuxlet** with the BAM file as input
+8. **results**: analyze **demuxlet** performance
 
 # Download
 Execute the following command.
